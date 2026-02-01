@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Department of Statistics - Study Resources</title>
+    <link href="https://fonts.googleapis.com/css2?family=Merriweather:wght@300;700&family=Open+Sans&display=swap" rel="stylesheet">
+    <style>
+        /* --- ACADEMIC THEME STYLES --- */
+        body { margin: 0; font-family: 'Open Sans', sans-serif; background-color: #f4f4f9; color: #333; }
+        
+        header { background-color: #002147; color: white; padding: 20px 0; text-align: center; }
+        header h1 { font-family: 'Merriweather', serif; margin: 0; font-size: 24px; }
+        header p { margin: 5px 0 0; font-size: 14px; opacity: 0.8; }
+
+        .container { max-width: 900px; margin: 30px auto; padding: 20px; }
+
+        /* Grid for the 15 Buttons */
+        .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 15px; }
+
+        .doc-btn {
+            background: white; border: 1px solid #ddd; padding: 15px;
+            text-align: left; cursor: pointer; border-radius: 5px;
+            transition: all 0.2s; display: flex; align-items: center;
+        }
+        .doc-btn:hover { border-color: #002147; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+        .doc-icon { font-size: 24px; margin-right: 15px; color: #d32f2f; } /* PDF Red color */
+        .doc-text strong { display: block; font-size: 16px; color: #002147; }
+        .doc-text span { font-size: 12px; color: #666; }
+
+        /* --- HIDDEN INTERFACE STYLES (The Secret Part) --- */
+        #secret-interface {
+            display: none; /* Hidden by default */
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.85); z-index: 999;
+            justify-content: center; align-items: center;
+        }
+
+        .secret-box {
+            background: white; padding: 30px; width: 90%; max-width: 500px;
+            border-radius: 8px; box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+            font-family: sans-serif;
+        }
+
+        input, button.action-btn { width: 100%; padding: 12px; margin: 8px 0; box-sizing: border-box; }
+        button.action-btn { background-color: #333; color: white; border: none; cursor: pointer; }
+        button.action-btn:hover { background-color: #000; }
+        
+        .data-list { max-height: 300px; overflow-y: auto; margin-top: 15px; border-top: 1px solid #eee; }
+        .data-item { padding: 10px; border-bottom: 1px solid #eee; font-size: 14px; }
+        .close-btn { float: right; cursor: pointer; font-size: 20px; font-weight: bold; }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>Resource Repository</h1>
+        <p>M.Sc. Statistics / Semester II Materials</p>
+    </header>
+
+    <div class="container">
+        <h3>Available Documents</h3>
+        <div class="grid">
+            <div class="doc-btn" onclick="openFakeLink('https://example.com/pdf1')">
+                <div class="doc-icon">📄</div>
+                <div class="doc-text"><strong>Probability Theory</strong><span>Unit 1 Notes.pdf</span></div>
+            </div>
+            <div class="doc-btn" onclick="openFakeLink('https://example.com/pdf2')">
+                <div class="doc-icon">📄</div>
+                <div class="doc-text"><strong>Linear Models</strong><span>Lecture Slides.pdf</span></div>
+            </div>
+            <div class="doc-btn" onclick="openFakeLink('#')"><div class="doc-icon">📄</div><div class="doc-text"><strong>Multivariate Analysis</strong><span>Chapter 4.pdf</span></div></div>
+            <div class="doc-btn" onclick="openFakeLink('#')"><div class="doc-icon">📄</div><div class="doc-text"><strong>Stochastic Processes</strong><span>Assignment.pdf</span></div></div>
+            <div class="doc-btn" onclick="openFakeLink('#')"><div class="doc-icon">📄</div><div class="doc-text"><strong>Inference I</strong><span>Question Bank.pdf</span></div></div>
+            <div class="doc-btn" onclick="openFakeLink('#')"><div class="doc-icon">📄</div><div class="doc-text"><strong>Inference II</strong><span>Solved Papers.pdf</span></div></div>
+            <div class="doc-btn" onclick="openFakeLink('#')"><div class="doc-icon">📄</div><div class="doc-text"><strong>Design of Experiments</strong><span>Lab Manual.pdf</span></div></div>
+            <div class="doc-btn" onclick="openFakeLink('#')"><div class="doc-icon">📄</div><div class="doc-text"><strong>Sampling Techniques</strong><span>Field Notes.pdf</span></div></div>
+            <div class="doc-btn" onclick="openFakeLink('#')"><div class="doc-icon">📄</div><div class="doc-text"><strong>Time Series Analysis</strong><span>Data Sets.csv</span></div></div>
+            <div class="doc-btn" onclick="openFakeLink('#')"><div class="doc-icon">📄</div><div class="doc-text"><strong>Econometrics</strong><span>Reference Book.pdf</span></div></div>
+            <div class="doc-btn" onclick="openFakeLink('#')"><div class="doc-icon">📄</div><div class="doc-text"><strong>Demography</strong><span>Census Data.pdf</span></div></div>
+            <div class="doc-btn" onclick="openFakeLink('#')"><div class="doc-icon">📄</div><div class="doc-text"><strong>R Programming</strong><span>Code Snippets.txt</span></div></div>
+            <div class="doc-btn" onclick="openFakeLink('#')"><div class="doc-icon">📄</div><div class="doc-text"><strong>Python for Data Science</strong><span>Cheatsheet.pdf</span></div></div>
+            <div class="doc-btn" onclick="openFakeLink('#')"><div class="doc-icon">📄</div><div class="doc-text"><strong>Operations Research</strong><span>Simplex Method.pdf</span></div></div>
+
+            <div class="doc-btn" onclick="triggerSecret()">
+                <div class="doc-icon">📄</div>
+                <div class="doc-text"><strong>Adv. Bayesian Methods</strong><span>Research Paper.pdf</span></div>
+            </div>
+        </div>
+    </div>
+
+    <div id="secret-interface" style="display: none;"> <div class="secret-box">
+            <span class="close-btn" onclick="closeSecret()">&times;</span>
+            
+            <div id="login-section">
+                <h3>🔒 Restricted Access</h3>
+                <input type="email" id="email" placeholder="Student Email">
+                <input type="password" id="password" placeholder="Access Key">
+                <button class="action-btn" onclick="login()">Unlock</button>
+                <p style="color:red; font-size: 12px;" id="login-error"></p>
+            </div>
+
+            <div id="app-section" style="display:none;">
+                <h3>📝 Private Notes</h3>
+                <input type="text" id="data-input" placeholder="Type your secret here...">
+                <button class="action-btn" onclick="saveData()">Save Entry</button>
+                <button class="action-btn" onclick="logout()" style="background:#555;">Lock & Logout</button>
+                
+                <div class="data-list" id="data-list">
+                    </div>
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } 
+            from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+        import { getFirestore, collection, addDoc, query, orderBy, onSnapshot } 
+            from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+        // --- I HAVE INSERTED YOUR KEYS HERE ---
+        const firebaseConfig = {
+            apiKey: "AIzaSyDZHzFUgX1wsJFzM4vtR6vtyiWRScEQWRU",
+            authDomain: "statrepo-c78b0.firebaseapp.com",
+            projectId: "statrepo-c78b0",
+            storageBucket: "statrepo-c78b0.firebasestorage.app",
+            messagingSenderId: "660399044410",
+            appId: "1:660399044410:web:ab1a49daa2ce91bd788203"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+
+        // --- UI FUNCTIONS ---
+        
+        // This handles the fake buttons
+        window.openFakeLink = (url) => {
+            if(url === '#') {
+                alert("Error: Document server is currently busy. Try again later."); // Adds realism
+            } else {
+                window.open(url, '_blank');
+            }
+        };
+
+        // This opens the secret door
+        window.triggerSecret = () => {
+            document.getElementById('secret-interface').style.display = 'flex';
+        };
+
+        // This closes the secret door
+        window.closeSecret = () => {
+            document.getElementById('secret-interface').style.display = 'none';
+        };
+
+        // --- FIREBASE FUNCTIONS ---
+        window.login = async () => {
+            const email = document.getElementById('email').value;
+            const pass = document.getElementById('password').value;
+            try {
+                await signInWithEmailAndPassword(auth, email, pass);
+            } catch (error) {
+                document.getElementById('login-error').innerText = "Access Denied: " + error.message;
+            }
+        };
+
+        window.logout = () => {
+            signOut(auth);
+            document.getElementById('secret-interface').style.display = 'none'; // Close window on logout
+        };
+
+        window.saveData = async () => {
+            const text = document.getElementById('data-input').value;
+            if(!text) return;
+            try {
+                await addDoc(collection(db, "secret_notes"), {
+                    content: text,
+                    user: auth.currentUser.email,
+                    timestamp: Date.now()
+                });
+                document.getElementById('data-input').value = "";
+            } catch (e) {
+                alert("Save failed: " + e.message);
+            }
+        };
+
+        // Listener
+        onAuthStateChanged(auth, (user) => {
+            if (user) {
+                document.getElementById('login-section').style.display = 'none';
+                document.getElementById('app-section').style.display = 'block';
+                
+                // Load Data
+                const q = query(collection(db, "secret_notes"), orderBy("timestamp", "desc"));
+                onSnapshot(q, (snapshot) => {
+                    const list = document.getElementById('data-list');
+                    list.innerHTML = "";
+                    snapshot.forEach((doc) => {
+                        const data = doc.data();
+                        const div = document.createElement('div');
+                        div.className = 'data-item';
+                        // Display: "User: Message"
+                        div.innerHTML = `<strong>${data.user.split('@')[0]}:</strong> ${data.content}`; 
+                        list.appendChild(div);
+                    });
+                });
+            } else {
+                document.getElementById('login-section').style.display = 'block';
+                document.getElementById('app-section').style.display = 'none';
+            }
+        });
+    </script>
+</body>
+</html>

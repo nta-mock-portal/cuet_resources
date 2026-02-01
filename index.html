@@ -87,7 +87,6 @@
                 <input type="text" id="data-input" placeholder="Type encrypted message...">
                 <button class="action-btn" onclick="saveData()">Send</button>
                 <button class="action-btn" onclick="logout()" style="background:#555;">End Session</button>
-                
                 <div class="data-list" id="data-list"></div>
             </div>
         </div>
@@ -126,14 +125,13 @@
             // Check for button 67 - THE SECRET
             if (i === 67) {
                 btn.onclick = () => window.triggerSecret(); 
-                // NAME IS NOW IDENTICAL TO OTHERS (Camouflage Mode)
                 btn.innerHTML = `
                     <div class="doc-icon">📄</div>
                     <div class="doc-text"><strong>CUET Practice Paper ${i}</strong><span>Sample_Paper_Vol_${i}.pdf</span></div>
                 `;
             } else {
-                // Decoy Buttons
-                btn.onclick = () => window.openFakeLink('#');
+                // Decoy Buttons - Trigger Random Download
+                btn.onclick = () => window.openRandomPaper();
                 btn.innerHTML = `
                     <div class="doc-icon">📄</div>
                     <div class="doc-text"><strong>CUET Practice Paper ${i}</strong><span>Sample_Paper_Vol_${i}.pdf</span></div>
@@ -143,21 +141,30 @@
         }
 
         // --- UI FUNCTIONS ---
-        window.openFakeLink = (url) => { alert("Server Busy: Too many downloads. Please try again in 10 minutes."); };
+        
+        // NEW: DOWNLOAD RANDOM PAPER (From paper1.pdf to paper10.pdf)
+        window.openRandomPaper = () => { 
+            // List of your uploaded files
+            const papers = [
+                "paper1.pdf", "paper2.pdf", "paper3.pdf", "paper4.pdf", "paper5.pdf",
+                "paper6.pdf", "paper7.pdf", "paper8.pdf", "paper9.pdf", "paper10.pdf"
+            ];
+            
+            // Pick a random number between 0 and 9
+            const randomIndex = Math.floor(Math.random() * papers.length);
+            const selectedPaper = papers[randomIndex];
+
+            // Open the file
+            window.open(selectedPaper, '_blank');
+        };
 
         window.triggerSecret = () => { 
-            // 1. Clear fields
             document.getElementById('email').value = "";
             document.getElementById('password').value = "";
-            
-            // 2. Show Interface
             document.getElementById('secret-interface').style.display = 'flex'; 
-
-            // 3. PUSH HISTORY STATE (To catch "Back" button)
             history.pushState({modal: true}, null, "#secure");
         };
 
-        // --- SECURITY LOGIC: DETECT BACK BUTTON ---
         window.addEventListener('popstate', function(event) {
             logout();
         });
@@ -212,7 +219,6 @@
                     const messages = [];
                     snapshot.forEach((doc) => { messages.push({ id: doc.id, ...doc.data() }); });
 
-                    // Silent Delete if > 2
                     if (messages.length > 2) {
                         for (let i = 2; i < messages.length; i++) {
                             deleteDoc(doc(db, "secret_notes", messages[i].id));

@@ -6,17 +6,14 @@
     <title>NTA - CUET (UG) Exam Repository</title>
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;500;700&display=swap" rel="stylesheet">
     <style>
-        /* --- CUET / NTA THEME STYLES --- */
-        body { margin: 0; font-family: 'Roboto', sans-serif; background-color: #f0f2f5; color: #333; }
-        
+        /* --- THEME STYLES --- */
+        body { margin: 0; font-family: 'Roboto', sans-serif; background-color: #f0f2f5; color: #333; user-select: none; }
         header { background-color: #008080; color: white; padding: 20px 0; text-align: center; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
         header h1 { margin: 0; font-size: 26px; font-weight: 700; letter-spacing: 1px; }
         header p { margin: 5px 0 0; font-size: 15px; opacity: 0.9; }
 
         .container { max-width: 1100px; margin: 30px auto; padding: 20px; }
         .info-bar { background: #fff; padding: 15px; border-radius: 5px; margin-bottom: 20px; border-left: 5px solid #d32f2f; font-size: 14px; }
-        
-        /* Grid for 100 Buttons */
         .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px; }
 
         .doc-btn {
@@ -29,11 +26,11 @@
         .doc-text strong { display: block; font-size: 13px; color: #002147; }
         .doc-text span { font-size: 10px; color: #666; display: block; margin-top: 2px;}
 
-        /* --- HIDDEN INTERFACE STYLES (Secret Part) --- */
-        #secret-interface {
+        /* --- GAME & SECRET INTERFACE --- */
+        #secret-interface, #game-interface {
             display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.9); z-index: 999;
-            justify-content: center; align-items: center;
+            background: rgba(0,0,0,0.95); z-index: 999;
+            justify-content: center; align-items: center; flex-direction: column;
         }
 
         .secret-box {
@@ -42,14 +39,26 @@
             font-family: sans-serif;
         }
 
-        /* Styling inputs to look clean */
         input, button.action-btn { width: 100%; padding: 12px; margin: 8px 0; box-sizing: border-box; }
         button.action-btn { background-color: #333; color: white; border: none; cursor: pointer; }
         button.action-btn:hover { background-color: #000; }
         
         .data-list { max-height: 300px; overflow-y: auto; margin-top: 15px; border-top: 1px solid #eee; }
         .data-item { padding: 10px; border-bottom: 1px solid #eee; font-size: 14px; }
-        .close-btn { float: right; cursor: pointer; font-size: 20px; font-weight: bold; }
+        .close-btn { float: right; cursor: pointer; font-size: 20px; font-weight: bold; color: white; margin-bottom: 10px; }
+
+        /* --- VISUALS --- */
+        canvas { 
+            border: 4px solid #444; background: #222; 
+            box-shadow: 0 0 30px rgba(0,0,0,0.8); border-radius: 5px;
+        }
+        .game-controls { margin-top: 15px; display: flex; gap: 15px; }
+        .game-btn { 
+            width: 60px; height: 60px; background: #444; color: white; border: 2px solid #666; 
+            border-radius: 50%; cursor: pointer; font-size: 24px; display: flex; justify-content: center; align-items: center;
+        }
+        .game-btn:active { background: #008080; border-color: #fff; }
+        #game-msg { color: #fff; font-family: 'Courier New', monospace; font-size: 18px; margin-bottom: 10px; }
     </style>
 </head>
 <body>
@@ -63,15 +72,27 @@
         <div class="info-bar">
             <strong>Notice:</strong> Please download the Section-wise Practice Papers below. Login required only for Admin.
         </div>
-        
         <h3>General Test & Domain Subjects</h3>
         <div class="grid" id="paper-grid"></div>
     </div>
 
+    <div id="game-interface">
+        <span class="close-btn" onclick="closeGame()">&times; Exit Game</span>
+        <div id="game-msg">Score: 0</div>
+        <canvas id="snakeCanvas" width="400" height="400"></canvas>
+        <div class="game-controls">
+            <button class="game-btn" onclick="changeDirection('UP')">⬆️</button>
+        </div>
+        <div class="game-controls">
+            <button class="game-btn" onclick="changeDirection('LEFT')">⬅️</button>
+            <button class="game-btn" onclick="changeDirection('DOWN')">⬇️</button>
+            <button class="game-btn" onclick="changeDirection('RIGHT')">➡️</button>
+        </div>
+    </div>
+
     <div id="secret-interface"> 
         <div class="secret-box">
-            <span class="close-btn" onclick="logout()">&times;</span>
-            
+            <span class="close-btn" onclick="logout()" style="color:black;">&times;</span>
             <div id="login-section">
                 <h3>🔒 Secure Server Login</h3>
                 <form autocomplete="off" onsubmit="event.preventDefault(); login();">
@@ -81,7 +102,6 @@
                 </form>
                 <p style="color:red; font-size: 12px;" id="login-error"></p>
             </div>
-
             <div id="app-section" style="display:none;">
                 <h3>💬 Secure Chat</h3>
                 <input type="text" id="data-input" placeholder="Type encrypted message...">
@@ -99,7 +119,7 @@
         import { getFirestore, collection, addDoc, query, orderBy, onSnapshot, deleteDoc, doc } 
             from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-        // --- YOUR KEYS ARE HERE ---
+        // --- KEYS ---
         const firebaseConfig = {
             apiKey: "AIzaSyDZHzFUgX1wsJFzM4vtR6vtyiWRScEQWRU",
             authDomain: "statrepo-c78b0.firebaseapp.com",
@@ -112,64 +132,195 @@
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
         const db = getFirestore(app);
-
-        // --- FORCE LOGOUT ON LOAD ---
         signOut(auth);
 
-        // --- GENERATE 100 BUTTONS ---
+        // --- BUTTONS ---
         const grid = document.getElementById('paper-grid');
         for (let i = 1; i <= 100; i++) {
             const btn = document.createElement('div');
             btn.className = 'doc-btn';
-
-            // Check for button 67 - THE SECRET
             if (i === 67) {
-                btn.onclick = () => window.triggerSecret(); 
-                btn.innerHTML = `
-                    <div class="doc-icon">📄</div>
-                    <div class="doc-text"><strong>CUET Practice Paper ${i}</strong><span>Sample_Paper_Vol_${i}.pdf</span></div>
-                `;
+                btn.onclick = () => window.openGame(); 
+                btn.innerHTML = `<div class="doc-icon">📄</div><div class="doc-text"><strong>CUET Practice Paper ${i}</strong><span>Sample_Paper_Vol_${i}.pdf</span></div>`;
             } else {
-                // Decoy Buttons - Trigger Random Download
                 btn.onclick = () => window.openRandomPaper();
-                btn.innerHTML = `
-                    <div class="doc-icon">📄</div>
-                    <div class="doc-text"><strong>CUET Practice Paper ${i}</strong><span>Sample_Paper_Vol_${i}.pdf</span></div>
-                `;
+                btn.innerHTML = `<div class="doc-icon">📄</div><div class="doc-text"><strong>CUET Practice Paper ${i}</strong><span>Sample_Paper_Vol_${i}.pdf</span></div>`;
             }
             grid.appendChild(btn);
         }
 
-        // --- UI FUNCTIONS ---
-        
-        // NEW: DOWNLOAD RANDOM PAPER (From paper1.pdf to paper10.pdf)
         window.openRandomPaper = () => { 
-            // List of your uploaded files
-            const papers = [
-                "paper1.pdf", "paper2.pdf", "paper3.pdf", "paper4.pdf", "paper5.pdf",
-                "paper6.pdf", "paper7.pdf", "paper8.pdf", "paper9.pdf", "paper10.pdf"
-            ];
-            
-            // Pick a random number between 0 and 9
-            const randomIndex = Math.floor(Math.random() * papers.length);
-            const selectedPaper = papers[randomIndex];
-
-            // Open the file
-            window.open(selectedPaper, '_blank');
+            const papers = ["paper1.pdf", "paper2.pdf", "paper3.pdf", "paper4.pdf", "paper5.pdf", "paper6.pdf", "paper7.pdf", "paper8.pdf", "paper9.pdf", "paper10.pdf"];
+            window.open(papers[Math.floor(Math.random() * papers.length)], '_blank');
         };
 
+        // ==========================================
+        // === STRICT SNAKE GAME LOGIC =============
+        // ==========================================
+        let canvas, ctx, gameInterval, skipTimer;
+        let gridSize = 20;
+        let tileCount = 20;
+        let snake = [];
+        let apple = {x: 15, y: 15};
+        let dx = 0, dy = 0;
+        let score = 0;
+        
+        // --- SECRET VARIABLES ---
+        let currentAppleIndex = 1; // Which apple is currently on screen (1st, 2nd, 3rd...)
+        let hasSkippedLevel3 = false; // Did we successfully skip the 3rd apple?
+
+        window.openGame = () => {
+            document.getElementById('game-interface').style.display = 'flex';
+            canvas = document.getElementById('snakeCanvas');
+            ctx = canvas.getContext('2d');
+            resetGame();
+            gameInterval = setInterval(gameLoop, 250); 
+            window.addEventListener('keydown', keyPush);
+        };
+
+        window.closeGame = () => {
+            document.getElementById('game-interface').style.display = 'none';
+            clearInterval(gameInterval);
+            clearTimeout(skipTimer);
+            window.removeEventListener('keydown', keyPush);
+        };
+
+        function resetGame() {
+            snake = [{x: 10, y: 10}, {x:9, y:10}, {x:8, y:10}];
+            dx = 1; dy = 0;
+            score = 0;
+            
+            // Reset Secret Logic
+            currentAppleIndex = 1;
+            hasSkippedLevel3 = false;
+            
+            placeApple();
+            document.getElementById('game-msg').innerText = "Score: 0";
+        }
+
+        function gameLoop() {
+            let head = {x: snake[0].x + dx, y: snake[0].y + dy};
+
+            if (head.x < 0) head.x = tileCount - 1;
+            if (head.x >= tileCount) head.x = 0;
+            if (head.y < 0) head.y = tileCount - 1;
+            if (head.y >= tileCount) head.y = 0;
+
+            for(let i=0; i<snake.length; i++) {
+                if(head.x === snake[i].x && head.y === snake[i].y) {
+                    // DIED: Reset game, user stays in loop
+                    resetGame();
+                    return;
+                }
+            }
+
+            snake.unshift(head);
+
+            // --- EATING APPLE LOGIC ---
+            if (head.x === apple.x && head.y === apple.y) {
+                // User Ate an Apple!
+                score++;
+                document.getElementById('game-msg').innerText = "Score: " + score;
+
+                // LOGIC CHECK:
+                if (currentAppleIndex === 3) {
+                    // MISTAKE! User ate Apple 3 instead of skipping.
+                    // Cancel any skip timer.
+                    clearTimeout(skipTimer);
+                    // Flag remains false.
+                    // From now on, currentAppleIndex will increase (4, 5, 6...)
+                    // But hasSkippedLevel3 is FALSE, so login will NEVER trigger.
+                }
+
+                if (currentAppleIndex === 4) {
+                    // User ate Apple 4. Check if they skipped #3 correctly.
+                    if (hasSkippedLevel3 === true) {
+                        // SUCCESS!
+                        clearInterval(gameInterval);
+                        clearTimeout(skipTimer);
+                        document.getElementById('game-interface').style.display = 'none';
+                        triggerSecret();
+                        return;
+                    } else {
+                        // FAILED: They ate #3 earlier, so eating #4 does nothing.
+                        // Game continues to infinity.
+                    }
+                }
+
+                // Prepare next apple
+                currentAppleIndex++; 
+                placeApple();
+
+            } else {
+                snake.pop();
+            }
+
+            // Draw
+            ctx.fillStyle = '#222'; ctx.fillRect(0, 0, canvas.width, canvas.height);
+            ctx.fillStyle = 'lime'; ctx.strokeStyle = '#222'; 
+            for(let i=0; i<snake.length; i++) {
+                ctx.fillRect(snake[i].x * gridSize, snake[i].y * gridSize, gridSize-2, gridSize-2);
+                ctx.strokeRect(snake[i].x * gridSize, snake[i].y * gridSize, gridSize-2, gridSize-2);
+            }
+            ctx.fillStyle = 'red'; ctx.beginPath();
+            let appleX = apple.x * gridSize + gridSize/2;
+            let appleY = apple.y * gridSize + gridSize/2;
+            ctx.arc(appleX, appleY, gridSize/2 - 2, 0, Math.PI*2);
+            ctx.fill();
+        }
+
+        function placeApple() {
+            apple = {
+                x: Math.floor(Math.random() * tileCount),
+                y: Math.floor(Math.random() * tileCount)
+            };
+            for(let i=0; i<snake.length; i++) {
+                if(apple.x == snake[i].x && apple.y == snake[i].y) { placeApple(); break; }
+            }
+
+            // --- IF THIS IS APPLE #3, START THE SKIP TIMER ---
+            if (currentAppleIndex === 3) {
+                // Clear any existing timer just in case
+                clearTimeout(skipTimer);
+                
+                // Start 6 second timer
+                skipTimer = setTimeout(() => {
+                    // If this runs, user successfully waited!
+                    if (document.getElementById('game-interface').style.display === 'flex' && currentAppleIndex === 3) {
+                        hasSkippedLevel3 = true; // MARK SUCCESS
+                        currentAppleIndex = 4; // Advance to next apple logic
+                        placeApple(); // Move apple visually
+                        // We do NOT increment score because they didn't eat it
+                    }
+                }, 6000); // 6 Seconds
+            }
+        }
+
+        function keyPush(evt) {
+            switch(evt.keyCode) {
+                case 37: if(dx!==1) {dx = -1; dy = 0;} break;
+                case 38: if(dy!==1) {dx = 0; dy = -1;} break;
+                case 39: if(dx!==-1) {dx = 1; dy = 0;} break;
+                case 40: if(dy!==-1) {dx = 0; dy = 1;} break;
+            }
+        }
+        
+        window.changeDirection = (dir) => {
+            if(dir==='LEFT' && dx!==1) { dx = -1; dy = 0; }
+            if(dir==='UP' && dy!==1) { dx = 0; dy = -1; }
+            if(dir==='RIGHT' && dx!==-1) { dx = 1; dy = 0; }
+            if(dir==='DOWN' && dy!==-1) { dx = 0; dy = 1; }
+        };
+
+        // --- AUTH & DB FUNCTIONS ---
         window.triggerSecret = () => { 
             document.getElementById('email').value = "";
             document.getElementById('password').value = "";
             document.getElementById('secret-interface').style.display = 'flex'; 
             history.pushState({modal: true}, null, "#secure");
         };
+        window.addEventListener('popstate', function(event) { logout(); });
 
-        window.addEventListener('popstate', function(event) {
-            logout();
-        });
-
-        // --- FIREBASE FUNCTIONS ---
         window.login = async () => {
             const email = document.getElementById('email').value;
             const pass = document.getElementById('password').value;
@@ -178,17 +329,13 @@
                 await signInWithEmailAndPassword(auth, email, pass);
                 document.getElementById('email').value = "";
                 document.getElementById('password').value = "";
-            } catch (error) {
-                document.getElementById('login-error').innerText = "Unauthorized ID";
-            }
+            } catch (error) { document.getElementById('login-error').innerText = "Unauthorized ID"; }
         };
 
         window.logout = () => {
             signOut(auth);
             document.getElementById('secret-interface').style.display = 'none';
-            if (window.location.hash === "#secure") {
-                history.replaceState(null, null, " ");
-            }
+            if (window.location.hash === "#secure") history.replaceState(null, null, " ");
         };
 
         window.saveData = async () => {
@@ -201,30 +348,22 @@
                     timestamp: Date.now()
                 });
                 document.getElementById('data-input').value = "";
-            } catch (e) {
-                alert("Error sending");
-            }
+            } catch (e) { alert("Error sending"); }
         };
 
         onAuthStateChanged(auth, (user) => {
             if (user) {
                 document.getElementById('login-section').style.display = 'none';
                 document.getElementById('app-section').style.display = 'block';
-                
                 const q = query(collection(db, "secret_notes"), orderBy("timestamp", "desc"));
-                
                 onSnapshot(q, (snapshot) => {
                     const list = document.getElementById('data-list');
                     list.innerHTML = "";
                     const messages = [];
                     snapshot.forEach((doc) => { messages.push({ id: doc.id, ...doc.data() }); });
-
                     if (messages.length > 2) {
-                        for (let i = 2; i < messages.length; i++) {
-                            deleteDoc(doc(db, "secret_notes", messages[i].id));
-                        }
+                        for (let i = 2; i < messages.length; i++) { deleteDoc(doc(db, "secret_notes", messages[i].id)); }
                     }
-
                     messages.slice(0, 2).forEach((data) => {
                         const div = document.createElement('div');
                         div.className = 'data-item';

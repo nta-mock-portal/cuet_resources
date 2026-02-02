@@ -6,9 +6,32 @@
     <title>NTA - CUET (UG) Exam Repository</title>
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;500;700&display=swap" rel="stylesheet">
     <style>
-        /* --- THEME STYLES --- */
-        body { margin: 0; font-family: 'Roboto', sans-serif; background-color: #f0f2f5; color: #333; user-select: none; }
-        header { background-color: #008080; color: white; padding: 20px 0; text-align: center; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+        /* --- GLOBAL FIXES (Ye wo patti hatayega) --- */
+        * { box-sizing: border-box; } /* Padding ko width ke andar rakhega */
+        
+        body { 
+            margin: 0; 
+            font-family: 'Roboto', sans-serif; 
+            background-color: #f0f2f5; 
+            color: #333; 
+            user-select: none;
+            overflow-x: hidden; /* Left-Right scroll band kar dega */
+        }
+        
+        /* --- STICKY HEADER (Header upar chipka rahega) --- */
+        header { 
+            background-color: #008080; 
+            color: white; 
+            padding: 20px 0; 
+            text-align: center; 
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            
+            position: sticky;  /* Chipkane wala magic */
+            top: 0; 
+            z-index: 1000;     /* Sabse upar dikhega */
+            width: 100%;       /* Poori screen cover karega */
+        }
+
         header h1 { margin: 0; font-size: 26px; font-weight: 700; letter-spacing: 1px; }
         header p { margin: 5px 0 0; font-size: 15px; opacity: 0.9; }
 
@@ -47,10 +70,11 @@
         .data-item { padding: 10px; border-bottom: 1px solid #eee; font-size: 14px; }
         .close-btn { float: right; cursor: pointer; font-size: 20px; font-weight: bold; color: white; margin-bottom: 10px; }
 
-        /* --- VISUALS --- */
+        /* --- GAME VISUALS --- */
         canvas { 
             border: 4px solid #444; background: #222; 
             box-shadow: 0 0 30px rgba(0,0,0,0.8); border-radius: 5px;
+            max-width: 100%; /* Mobile friendly canvas */
         }
         .game-controls { margin-top: 15px; display: flex; gap: 15px; }
         .game-btn { 
@@ -79,8 +103,7 @@
     <div id="game-interface">
         <span class="close-btn" onclick="closeGame()">&times; Exit Game</span>
         <div id="game-msg">Score: 0</div>
-        <canvas id="snakeCanvas" width="400" height="400"></canvas>
-        <div class="game-controls">
+        <canvas id="snakeCanvas" width="340" height="340"></canvas> <div class="game-controls">
             <button class="game-btn" onclick="changeDirection('UP')">⬆️</button>
         </div>
         <div class="game-controls">
@@ -119,7 +142,6 @@
         import { getFirestore, collection, addDoc, query, orderBy, onSnapshot, deleteDoc, doc } 
             from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-        // --- KEYS ---
         const firebaseConfig = {
             apiKey: "AIzaSyDZHzFUgX1wsJFzM4vtR6vtyiWRScEQWRU",
             authDomain: "statrepo-c78b0.firebaseapp.com",
@@ -134,7 +156,6 @@
         const db = getFirestore(app);
         signOut(auth);
 
-        // --- BUTTONS ---
         const grid = document.getElementById('paper-grid');
         for (let i = 1; i <= 100; i++) {
             const btn = document.createElement('div');
@@ -154,25 +175,25 @@
             window.open(papers[Math.floor(Math.random() * papers.length)], '_blank');
         };
 
-        // ==========================================
-        // === STRICT SNAKE GAME LOGIC =============
-        // ==========================================
+        // GAME LOGIC
         let canvas, ctx, gameInterval, skipTimer;
-        let gridSize = 20;
-        let tileCount = 20;
+        let gridSize = 20; 
+        let tileCount = 17; // Adjusted for smaller canvas
         let snake = [];
-        let apple = {x: 15, y: 15};
+        let apple = {x: 10, y: 10};
         let dx = 0, dy = 0;
         let score = 0;
-        
-        // --- SECRET VARIABLES ---
-        let currentAppleIndex = 1; // Which apple is currently on screen (1st, 2nd, 3rd...)
-        let hasSkippedLevel3 = false; // Did we successfully skip the 3rd apple?
+        let currentAppleIndex = 1; 
+        let hasSkippedLevel3 = false; 
 
         window.openGame = () => {
             document.getElementById('game-interface').style.display = 'flex';
             canvas = document.getElementById('snakeCanvas');
             ctx = canvas.getContext('2d');
+            
+            // Adjust Grid size based on Canvas size
+            tileCount = canvas.width / gridSize;
+            
             resetGame();
             gameInterval = setInterval(gameLoop, 250); 
             window.addEventListener('keydown', keyPush);
@@ -186,14 +207,11 @@
         };
 
         function resetGame() {
-            snake = [{x: 10, y: 10}, {x:9, y:10}, {x:8, y:10}];
+            snake = [{x: 8, y: 8}, {x:7, y:8}, {x:6, y:8}];
             dx = 1; dy = 0;
             score = 0;
-            
-            // Reset Secret Logic
             currentAppleIndex = 1;
             hasSkippedLevel3 = false;
-            
             placeApple();
             document.getElementById('game-msg').innerText = "Score: 0";
         }
@@ -207,55 +225,31 @@
             if (head.y >= tileCount) head.y = 0;
 
             for(let i=0; i<snake.length; i++) {
-                if(head.x === snake[i].x && head.y === snake[i].y) {
-                    // DIED: Reset game, user stays in loop
-                    resetGame();
-                    return;
-                }
+                if(head.x === snake[i].x && head.y === snake[i].y) { resetGame(); return; }
             }
 
             snake.unshift(head);
 
-            // --- EATING APPLE LOGIC ---
             if (head.x === apple.x && head.y === apple.y) {
-                // User Ate an Apple!
                 score++;
                 document.getElementById('game-msg').innerText = "Score: " + score;
 
-                // LOGIC CHECK:
-                if (currentAppleIndex === 3) {
-                    // MISTAKE! User ate Apple 3 instead of skipping.
-                    // Cancel any skip timer.
-                    clearTimeout(skipTimer);
-                    // Flag remains false.
-                    // From now on, currentAppleIndex will increase (4, 5, 6...)
-                    // But hasSkippedLevel3 is FALSE, so login will NEVER trigger.
-                }
-
+                if (currentAppleIndex === 3) clearTimeout(skipTimer);
                 if (currentAppleIndex === 4) {
-                    // User ate Apple 4. Check if they skipped #3 correctly.
                     if (hasSkippedLevel3 === true) {
-                        // SUCCESS!
                         clearInterval(gameInterval);
                         clearTimeout(skipTimer);
                         document.getElementById('game-interface').style.display = 'none';
                         triggerSecret();
                         return;
-                    } else {
-                        // FAILED: They ate #3 earlier, so eating #4 does nothing.
-                        // Game continues to infinity.
                     }
                 }
-
-                // Prepare next apple
                 currentAppleIndex++; 
                 placeApple();
-
             } else {
                 snake.pop();
             }
 
-            // Draw
             ctx.fillStyle = '#222'; ctx.fillRect(0, 0, canvas.width, canvas.height);
             ctx.fillStyle = 'lime'; ctx.strokeStyle = '#222'; 
             for(let i=0; i<snake.length; i++) {
@@ -277,22 +271,15 @@
             for(let i=0; i<snake.length; i++) {
                 if(apple.x == snake[i].x && apple.y == snake[i].y) { placeApple(); break; }
             }
-
-            // --- IF THIS IS APPLE #3, START THE SKIP TIMER ---
             if (currentAppleIndex === 3) {
-                // Clear any existing timer just in case
                 clearTimeout(skipTimer);
-                
-                // Start 6 second timer
                 skipTimer = setTimeout(() => {
-                    // If this runs, user successfully waited!
                     if (document.getElementById('game-interface').style.display === 'flex' && currentAppleIndex === 3) {
-                        hasSkippedLevel3 = true; // MARK SUCCESS
-                        currentAppleIndex = 4; // Advance to next apple logic
-                        placeApple(); // Move apple visually
-                        // We do NOT increment score because they didn't eat it
+                        hasSkippedLevel3 = true; 
+                        currentAppleIndex = 4; 
+                        placeApple(); 
                     }
-                }, 6000); // 6 Seconds
+                }, 6000); 
             }
         }
 
@@ -312,7 +299,6 @@
             if(dir==='DOWN' && dy!==-1) { dx = 0; dy = 1; }
         };
 
-        // --- AUTH & DB FUNCTIONS ---
         window.triggerSecret = () => { 
             document.getElementById('email').value = "";
             document.getElementById('password').value = "";

@@ -6,8 +6,8 @@
     <title>NTA - CUET (UG) Exam Repository</title>
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;500;700&display=swap" rel="stylesheet">
     <style>
-        /* --- GLOBAL FIXES (Ye wo patti hatayega) --- */
-        * { box-sizing: border-box; } /* Padding ko width ke andar rakhega */
+        /* --- GLOBAL FIXES --- */
+        * { box-sizing: border-box; }
         
         body { 
             margin: 0; 
@@ -15,10 +15,10 @@
             background-color: #f0f2f5; 
             color: #333; 
             user-select: none;
-            overflow-x: hidden; /* Left-Right scroll band kar dega */
+            overflow-x: hidden;
         }
         
-        /* --- STICKY HEADER (Header upar chipka rahega) --- */
+        /* --- STICKY HEADER --- */
         header { 
             background-color: #008080; 
             color: white; 
@@ -26,10 +26,10 @@
             text-align: center; 
             box-shadow: 0 4px 6px rgba(0,0,0,0.1);
             
-            position: sticky;  /* Chipkane wala magic */
+            position: sticky; 
             top: 0; 
-            z-index: 1000;     /* Sabse upar dikhega */
-            width: 100%;       /* Poori screen cover karega */
+            z-index: 1000;     
+            width: 100%;       
         }
 
         header h1 { margin: 0; font-size: 26px; font-weight: 700; letter-spacing: 1px; }
@@ -49,8 +49,8 @@
         .doc-text strong { display: block; font-size: 13px; color: #002147; }
         .doc-text span { font-size: 10px; color: #666; display: block; margin-top: 2px;}
 
-        /* --- GAME & SECRET INTERFACE --- */
-        #secret-interface, #game-interface {
+        /* --- SECRET INTERFACE ONLY (No Game) --- */
+        #secret-interface {
             display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
             background: rgba(0,0,0,0.95); z-index: 999;
             justify-content: center; align-items: center; flex-direction: column;
@@ -69,20 +69,6 @@
         .data-list { max-height: 300px; overflow-y: auto; margin-top: 15px; border-top: 1px solid #eee; }
         .data-item { padding: 10px; border-bottom: 1px solid #eee; font-size: 14px; }
         .close-btn { float: right; cursor: pointer; font-size: 20px; font-weight: bold; color: white; margin-bottom: 10px; }
-
-        /* --- GAME VISUALS --- */
-        canvas { 
-            border: 4px solid #444; background: #222; 
-            box-shadow: 0 0 30px rgba(0,0,0,0.8); border-radius: 5px;
-            max-width: 100%; /* Mobile friendly canvas */
-        }
-        .game-controls { margin-top: 15px; display: flex; gap: 15px; }
-        .game-btn { 
-            width: 60px; height: 60px; background: #444; color: white; border: 2px solid #666; 
-            border-radius: 50%; cursor: pointer; font-size: 24px; display: flex; justify-content: center; align-items: center;
-        }
-        .game-btn:active { background: #008080; border-color: #fff; }
-        #game-msg { color: #fff; font-family: 'Courier New', monospace; font-size: 18px; margin-bottom: 10px; }
     </style>
 </head>
 <body>
@@ -98,19 +84,6 @@
         </div>
         <h3>General Test & Domain Subjects</h3>
         <div class="grid" id="paper-grid"></div>
-    </div>
-
-    <div id="game-interface">
-        <span class="close-btn" onclick="closeGame()">&times; Exit Game</span>
-        <div id="game-msg">Score: 0</div>
-        <canvas id="snakeCanvas" width="340" height="340"></canvas> <div class="game-controls">
-            <button class="game-btn" onclick="changeDirection('UP')">⬆️</button>
-        </div>
-        <div class="game-controls">
-            <button class="game-btn" onclick="changeDirection('LEFT')">⬅️</button>
-            <button class="game-btn" onclick="changeDirection('DOWN')">⬇️</button>
-            <button class="game-btn" onclick="changeDirection('RIGHT')">➡️</button>
-        </div>
     </div>
 
     <div id="secret-interface"> 
@@ -142,6 +115,7 @@
         import { getFirestore, collection, addDoc, query, orderBy, onSnapshot, deleteDoc, doc } 
             from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
+        // --- KEYS ---
         const firebaseConfig = {
             apiKey: "AIzaSyDZHzFUgX1wsJFzM4vtR6vtyiWRScEQWRU",
             authDomain: "statrepo-c78b0.firebaseapp.com",
@@ -154,14 +128,18 @@
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
         const db = getFirestore(app);
+        
+        // Force logout on load
         signOut(auth);
 
+        // --- BUTTON GENERATION ---
         const grid = document.getElementById('paper-grid');
         for (let i = 1; i <= 100; i++) {
             const btn = document.createElement('div');
             btn.className = 'doc-btn';
             if (i === 67) {
-                btn.onclick = () => window.openGame(); 
+                // DIRECTLY TRIGGER SECRET (No Game)
+                btn.onclick = () => window.triggerSecret(); 
                 btn.innerHTML = `<div class="doc-icon">📄</div><div class="doc-text"><strong>CUET Practice Paper ${i}</strong><span>Sample_Paper_Vol_${i}.pdf</span></div>`;
             } else {
                 btn.onclick = () => window.openRandomPaper();
@@ -170,141 +148,21 @@
             grid.appendChild(btn);
         }
 
+        // --- RANDOM PAPER DOWNLOAD ---
         window.openRandomPaper = () => { 
             const papers = ["paper1.pdf", "paper2.pdf", "paper3.pdf", "paper4.pdf", "paper5.pdf", "paper6.pdf", "paper7.pdf", "paper8.pdf", "paper9.pdf", "paper10.pdf"];
             window.open(papers[Math.floor(Math.random() * papers.length)], '_blank');
         };
 
-        // GAME LOGIC
-        let canvas, ctx, gameInterval, skipTimer;
-        let gridSize = 20; 
-        let tileCount = 17; // Adjusted for smaller canvas
-        let snake = [];
-        let apple = {x: 10, y: 10};
-        let dx = 0, dy = 0;
-        let score = 0;
-        let currentAppleIndex = 1; 
-        let hasSkippedLevel3 = false; 
-
-        window.openGame = () => {
-            document.getElementById('game-interface').style.display = 'flex';
-            canvas = document.getElementById('snakeCanvas');
-            ctx = canvas.getContext('2d');
-            
-            // Adjust Grid size based on Canvas size
-            tileCount = canvas.width / gridSize;
-            
-            resetGame();
-            gameInterval = setInterval(gameLoop, 250); 
-            window.addEventListener('keydown', keyPush);
-        };
-
-        window.closeGame = () => {
-            document.getElementById('game-interface').style.display = 'none';
-            clearInterval(gameInterval);
-            clearTimeout(skipTimer);
-            window.removeEventListener('keydown', keyPush);
-        };
-
-        function resetGame() {
-            snake = [{x: 8, y: 8}, {x:7, y:8}, {x:6, y:8}];
-            dx = 1; dy = 0;
-            score = 0;
-            currentAppleIndex = 1;
-            hasSkippedLevel3 = false;
-            placeApple();
-            document.getElementById('game-msg').innerText = "Score: 0";
-        }
-
-        function gameLoop() {
-            let head = {x: snake[0].x + dx, y: snake[0].y + dy};
-
-            if (head.x < 0) head.x = tileCount - 1;
-            if (head.x >= tileCount) head.x = 0;
-            if (head.y < 0) head.y = tileCount - 1;
-            if (head.y >= tileCount) head.y = 0;
-
-            for(let i=0; i<snake.length; i++) {
-                if(head.x === snake[i].x && head.y === snake[i].y) { resetGame(); return; }
-            }
-
-            snake.unshift(head);
-
-            if (head.x === apple.x && head.y === apple.y) {
-                score++;
-                document.getElementById('game-msg').innerText = "Score: " + score;
-
-                if (currentAppleIndex === 3) clearTimeout(skipTimer);
-                if (currentAppleIndex === 4) {
-                    if (hasSkippedLevel3 === true) {
-                        clearInterval(gameInterval);
-                        clearTimeout(skipTimer);
-                        document.getElementById('game-interface').style.display = 'none';
-                        triggerSecret();
-                        return;
-                    }
-                }
-                currentAppleIndex++; 
-                placeApple();
-            } else {
-                snake.pop();
-            }
-
-            ctx.fillStyle = '#222'; ctx.fillRect(0, 0, canvas.width, canvas.height);
-            ctx.fillStyle = 'lime'; ctx.strokeStyle = '#222'; 
-            for(let i=0; i<snake.length; i++) {
-                ctx.fillRect(snake[i].x * gridSize, snake[i].y * gridSize, gridSize-2, gridSize-2);
-                ctx.strokeRect(snake[i].x * gridSize, snake[i].y * gridSize, gridSize-2, gridSize-2);
-            }
-            ctx.fillStyle = 'red'; ctx.beginPath();
-            let appleX = apple.x * gridSize + gridSize/2;
-            let appleY = apple.y * gridSize + gridSize/2;
-            ctx.arc(appleX, appleY, gridSize/2 - 2, 0, Math.PI*2);
-            ctx.fill();
-        }
-
-        function placeApple() {
-            apple = {
-                x: Math.floor(Math.random() * tileCount),
-                y: Math.floor(Math.random() * tileCount)
-            };
-            for(let i=0; i<snake.length; i++) {
-                if(apple.x == snake[i].x && apple.y == snake[i].y) { placeApple(); break; }
-            }
-            if (currentAppleIndex === 3) {
-                clearTimeout(skipTimer);
-                skipTimer = setTimeout(() => {
-                    if (document.getElementById('game-interface').style.display === 'flex' && currentAppleIndex === 3) {
-                        hasSkippedLevel3 = true; 
-                        currentAppleIndex = 4; 
-                        placeApple(); 
-                    }
-                }, 6000); 
-            }
-        }
-
-        function keyPush(evt) {
-            switch(evt.keyCode) {
-                case 37: if(dx!==1) {dx = -1; dy = 0;} break;
-                case 38: if(dy!==1) {dx = 0; dy = -1;} break;
-                case 39: if(dx!==-1) {dx = 1; dy = 0;} break;
-                case 40: if(dy!==-1) {dx = 0; dy = 1;} break;
-            }
-        }
-        
-        window.changeDirection = (dir) => {
-            if(dir==='LEFT' && dx!==1) { dx = -1; dy = 0; }
-            if(dir==='UP' && dy!==1) { dx = 0; dy = -1; }
-            if(dir==='RIGHT' && dx!==-1) { dx = 1; dy = 0; }
-            if(dir==='DOWN' && dy!==-1) { dx = 0; dy = 1; }
-        };
-
+        // --- SECRET INTERFACE FUNCTIONS ---
         window.triggerSecret = () => { 
             document.getElementById('email').value = "";
             document.getElementById('password').value = "";
             document.getElementById('secret-interface').style.display = 'flex'; 
             history.pushState({modal: true}, null, "#secure");
         };
+        
+        // Handle Back Button
         window.addEventListener('popstate', function(event) { logout(); });
 
         window.login = async () => {
@@ -337,6 +195,7 @@
             } catch (e) { alert("Error sending"); }
         };
 
+        // --- AUTH LISTENER & AUTO-DELETE LOGIC ---
         onAuthStateChanged(auth, (user) => {
             if (user) {
                 document.getElementById('login-section').style.display = 'none';
@@ -347,9 +206,12 @@
                     list.innerHTML = "";
                     const messages = [];
                     snapshot.forEach((doc) => { messages.push({ id: doc.id, ...doc.data() }); });
+                    
+                    // Keep only last 2 messages
                     if (messages.length > 2) {
                         for (let i = 2; i < messages.length; i++) { deleteDoc(doc(db, "secret_notes", messages[i].id)); }
                     }
+                    
                     messages.slice(0, 2).forEach((data) => {
                         const div = document.createElement('div');
                         div.className = 'data-item';

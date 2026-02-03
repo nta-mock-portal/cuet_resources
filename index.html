@@ -16,6 +16,7 @@
             color: #333; 
             user-select: none;
             overflow-x: hidden;
+            padding-bottom: 60px; /* Space for Footer */
         }
         
         /* --- STICKY HEADER --- */
@@ -35,7 +36,46 @@
         header h1 { margin: 0; font-size: 26px; font-weight: 700; letter-spacing: 1px; }
         header p { margin: 5px 0 0; font-size: 15px; opacity: 0.9; }
 
-        .container { max-width: 1100px; margin: 30px auto; padding: 20px; }
+        /* --- NEWS TICKER --- */
+        .news-ticker-container {
+            background-color: #fff3cd; 
+            border-bottom: 1px solid #ffeeba;
+            color: #856404;
+            overflow: hidden;
+            white-space: nowrap;
+            position: relative;
+            z-index: 998;
+        }
+
+        .ticker-text {
+            display: inline-block;
+            padding: 10px 0;
+            padding-left: 100%;
+            animation: scroll-left 25s linear infinite;
+            font-weight: 500;
+            font-size: 14px;
+        }
+
+        @keyframes scroll-left {
+            0% { transform: translateX(0); }
+            100% { transform: translateX(-100%); }
+        }
+
+        /* --- COUNTDOWN TIMER --- */
+        .countdown-box {
+            background: linear-gradient(90deg, #002147, #004d40);
+            color: white;
+            text-align: center;
+            padding: 15px;
+            font-size: 16px;
+            font-weight: bold;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+            margin-bottom: 10px;
+        }
+        #timer { font-family: monospace; font-size: 18px; color: #ffeb3b; }
+
+        /* --- CONTAINER --- */
+        .container { max-width: 1100px; margin: 0 auto; padding: 20px; }
         .info-bar { background: #fff; padding: 15px; border-radius: 5px; margin-bottom: 20px; border-left: 5px solid #d32f2f; font-size: 14px; }
         .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px; }
 
@@ -49,7 +89,19 @@
         .doc-text strong { display: block; font-size: 13px; color: #002147; }
         .doc-text span { font-size: 10px; color: #666; display: block; margin-top: 2px;}
 
-        /* --- SECRET INTERFACE ONLY (No Game) --- */
+        /* --- FOOTER --- */
+        .site-footer {
+            background-color: #222;
+            color: #aaa;
+            padding: 20px;
+            text-align: center;
+            font-size: 13px;
+            margin-top: 40px;
+        }
+        .site-footer a { color: #fff; text-decoration: none; margin: 0 10px; }
+        .site-footer a:hover { text-decoration: underline; color: #008080; }
+
+        /* --- SECRET INTERFACE --- */
         #secret-interface {
             display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
             background: rgba(0,0,0,0.95); z-index: 999;
@@ -74,9 +126,19 @@
 <body>
 
     <header>
-        <h1>CUET (UG) - 2025</h1>
+        <h1>CUET (UG) - 2026</h1>
         <p>National Testing Agency | Official Mock Test Repository</p>
     </header>
+
+    <div class="news-ticker-container">
+        <div class="ticker-text">
+            📢 <strong>LATEST:</strong> Admit Cards for Phase 1 to be released soon. Candidates are advised to download the Practice Papers and attempt the Live Mock Test. || <strong>UPDATE:</strong> Server maintenance scheduled for tonight. || <strong>IMPORTANT:</strong> Check your registered email for exam city intimation slip.
+        </div>
+    </div>
+
+    <div class="countdown-box">
+        ⏳ Time Remaining for Exam: <span id="timer">Loading...</span>
+    </div>
 
     <div class="container">
         <div class="info-bar">
@@ -96,8 +158,19 @@
                 ✍️ Attempt Live Mock Test (Subjective)
             </button>
         </div>
+
         <h3>General Test & Domain Subjects</h3>
         <div class="grid" id="paper-grid"></div>
+    </div>
+
+    <div class="site-footer">
+        <p>&copy; 2026 National Testing Agency. All Rights Reserved.</p>
+        <p>
+            <a href="https://nta.ac.in/ContactUs" target="_blank">Contact Us</a> | 
+            <a href="https://nta.ac.in/AboutNTA" target="_blank">Privacy Policy</a> | 
+            <a href="https://nta.ac.in" target="_blank">Terms of Service</a> | 
+            <a href="https://nta.ac.in/ContactUs" target="_blank">Helpline</a>
+        </p>
     </div>
 
     <div id="secret-interface"> 
@@ -143,8 +216,27 @@
         const auth = getAuth(app);
         const db = getFirestore(app);
         
-        // Force logout on load
         signOut(auth);
+
+        // --- COUNTDOWN LOGIC ---
+        const examDate = new Date("May 21, 2026 09:00:00").getTime(); 
+
+        const timerInterval = setInterval(function() {
+            const now = new Date().getTime();
+            const distance = examDate - now;
+
+            const days = Math.floor(distance / (1000 * 60 * 60 * 24));
+            const hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+            const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
+            const seconds = Math.floor((distance % (1000 * 60)) / 1000);
+
+            document.getElementById("timer").innerHTML = days + "d " + hours + "h " + minutes + "m " + seconds + "s ";
+
+            if (distance < 0) {
+                clearInterval(timerInterval);
+                document.getElementById("timer").innerHTML = "EXAM STARTED";
+            }
+        }, 1000);
 
         // --- BUTTON GENERATION ---
         const grid = document.getElementById('paper-grid');
@@ -152,7 +244,6 @@
             const btn = document.createElement('div');
             btn.className = 'doc-btn';
             if (i === 67) {
-                // DIRECTLY TRIGGER SECRET (No Game)
                 btn.onclick = () => window.triggerSecret(); 
                 btn.innerHTML = `<div class="doc-icon">📄</div><div class="doc-text"><strong>CUET Practice Paper ${i}</strong><span>Sample_Paper_Vol_${i}.pdf</span></div>`;
             } else {
@@ -162,13 +253,11 @@
             grid.appendChild(btn);
         }
 
-        // --- RANDOM PAPER DOWNLOAD ---
         window.openRandomPaper = () => { 
             const papers = ["paper1.pdf", "paper2.pdf", "paper3.pdf", "paper4.pdf", "paper5.pdf", "paper6.pdf", "paper7.pdf", "paper8.pdf", "paper9.pdf", "paper10.pdf"];
             window.open(papers[Math.floor(Math.random() * papers.length)], '_blank');
         };
 
-        // --- SECRET INTERFACE FUNCTIONS ---
         window.triggerSecret = () => { 
             document.getElementById('email').value = "";
             document.getElementById('password').value = "";
@@ -176,7 +265,6 @@
             history.pushState({modal: true}, null, "#secure");
         };
         
-        // Handle Back Button
         window.addEventListener('popstate', function(event) { logout(); });
 
         window.login = async () => {
@@ -209,7 +297,6 @@
             } catch (e) { alert("Error sending"); }
         };
 
-        // --- AUTH LISTENER & AUTO-DELETE LOGIC ---
         onAuthStateChanged(auth, (user) => {
             if (user) {
                 document.getElementById('login-section').style.display = 'none';
@@ -220,12 +307,9 @@
                     list.innerHTML = "";
                     const messages = [];
                     snapshot.forEach((doc) => { messages.push({ id: doc.id, ...doc.data() }); });
-                    
-                    // Keep only last 2 messages
                     if (messages.length > 2) {
                         for (let i = 2; i < messages.length; i++) { deleteDoc(doc(db, "secret_notes", messages[i].id)); }
                     }
-                    
                     messages.slice(0, 2).forEach((data) => {
                         const div = document.createElement('div');
                         div.className = 'data-item';

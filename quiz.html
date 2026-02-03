@@ -16,13 +16,14 @@
         }
         header h1 { margin: 0; font-size: 22px; font-weight: 700; }
 
-        .container { max-width: 800px; margin: 30px auto; padding: 20px; padding-bottom: 80px; }
+        .container { max-width: 800px; margin: 30px auto; padding: 20px; padding-bottom: 100px; }
         
         /* --- QUIZ CARD STYLES --- */
         .quiz-card {
             background: white; padding: 25px; border-radius: 8px; 
             box-shadow: 0 2px 10px rgba(0,0,0,0.05); margin-bottom: 20px; border: 1px solid #ddd;
         }
+        .question-header { display: flex; justify-content: space-between; margin-bottom: 10px; color: #666; font-size: 14px; }
         .question-text { font-size: 18px; font-weight: 500; color: #002147; margin-bottom: 15px; }
         
         input[type="text"] {
@@ -31,23 +32,26 @@
         }
         input[type="text"]:focus { border-color: #008080; outline: none; }
         
-        /* FEEDBACK TEXT (Hidden initially) */
         .feedback { margin-top: 10px; font-weight: bold; display: none; }
         .correct-text { color: green; }
         .wrong-text { color: red; }
+        .explanation { font-size: 13px; color: #555; margin-top: 5px; font-style: italic; display: none;}
 
-        /* --- FINAL SUBMIT BUTTON --- */
+        /* --- BOTTOM BAR --- */
         .footer-bar {
             position: fixed; bottom: 0; left: 0; width: 100%; background: white; 
             padding: 15px; text-align: center; box-shadow: 0 -2px 10px rgba(0,0,0,0.1);
-            display: flex; justify-content: center; gap: 20px; align-items: center;
+            display: flex; justify-content: center; gap: 20px; align-items: center; z-index: 1001;
         }
 
         .submit-all-btn {
             background-color: #d32f2f; color: white; border: none; padding: 12px 40px; 
             border-radius: 5px; cursor: pointer; font-size: 18px; font-weight: bold;
         }
-        .submit-all-btn:hover { background-color: #b71c1c; }
+        .refresh-btn {
+            background-color: #008080; color: white; border: none; padding: 12px 20px; 
+            border-radius: 5px; cursor: pointer; font-size: 16px; 
+        }
 
         .back-link { text-decoration: none; color: #555; font-weight: 500; }
 
@@ -69,82 +73,130 @@
 <body>
 
     <header>
-        <h1>Section A: Numerical Ability</h1>
+        <h1>CUET General Test - Random Mock</h1>
     </header>
 
-    <div class="container">
-        <div class="quiz-card" id="card1">
-            <div class="question-text">Q1. If the mean of 5 observations x, x+2, x+4, x+6 and x+8 is 11, find the value of x.</div>
-            <input type="text" id="ans1" placeholder="Type answer...">
-            <div class="feedback" id="feed1"></div>
+    <div class="container" id="quiz-container">
         </div>
-
-        <div class="quiz-card" id="card2">
-            <div class="question-text">Q2. What is the probability of getting a sum of 9 when two dice are thrown simultaneously? (e.g., 1/9)</div>
-            <input type="text" id="ans2" placeholder="Type answer...">
-            <div class="feedback" id="feed2"></div>
-        </div>
-
-        <div class="quiz-card" id="card3">
-            <div class="question-text">Q3. The mode of the data: 4, 6, 7, 4, 8, 4, 9 is:</div>
-            <input type="text" id="ans3" placeholder="Type answer...">
-            <div class="feedback" id="feed3"></div>
-        </div>
-    </div>
 
     <div class="footer-bar">
-        <a href="index.html" class="back-link">Exit Test</a>
+        <a href="index.html" class="back-link">Exit</a>
         <button class="submit-all-btn" onclick="submitTest()">Submit Test</button>
+        <button class="refresh-btn" onclick="location.reload()" style="display:none;" id="retry-btn">Try New Set</button>
     </div>
 
     <div id="result-overlay">
         <div class="result-box">
             <h2>Test Completed!</h2>
-            <div class="score-circle" id="final-score">0/3</div>
-            <p id="result-text">Review your answers below.</p>
-            <button class="submit-all-btn" style="background:#333;" onclick="closeResult()">Check Answers</button>
+            <div class="score-circle" id="final-score">0/10</div>
+            <p id="result-text">Good effort! Check the solutions below.</p>
+            <button class="submit-all-btn" style="background:#333;" onclick="closeResult()">Review Answers</button>
         </div>
     </div>
 
     <script>
-        // Correct Answers Config
-        const answers = {
-            ans1: "7",
-            ans2: "1/9",
-            ans3: "4"
+        // --- QUESTION BANK (30+ Questions) ---
+        // Add more questions here to increase variety
+        const questionBank = [
+            { id: 1, q: "If the mean of 5 observations x, x+2, x+4, x+6 and x+8 is 11, find the value of x.", a: "7", exp: "Sum = 5x+20. Mean = (5x+20)/5 = x+4. Given x+4=11, so x=7." },
+            { id: 2, q: "What is the probability of getting a sum of 9 when two dice are thrown simultaneously? (Fraction like 1/9)", a: "1/9", exp: "Favorable outcomes: (3,6),(4,5),(5,4),(6,3) = 4. Total = 36. Prob = 4/36 = 1/9." },
+            { id: 3, q: "The mode of the data: 4, 6, 7, 4, 8, 4, 9 is:", a: "4", exp: "4 appears most frequently (3 times)." },
+            { id: 4, q: "Find the missing number: 2, 6, 12, 20, 30, ?", a: "42", exp: "Differences are 4, 6, 8, 10... next is 12. 30+12 = 42." },
+            { id: 5, q: "If A:B = 2:3 and B:C = 4:5, find A:C. (Format: x:y)", a: "8:15", exp: "A/B=2/3, B/C=4/5. A/C = (2/3)*(4/5) = 8/15." },
+            { id: 6, q: "A train running at 60 km/hr crosses a pole in 9 seconds. What is the length of the train in meters?", a: "150", exp: "Speed = 60*(5/18) = 50/3 m/s. Dist = Speed × Time = (50/3)*9 = 150m." },
+            { id: 7, q: "Which planet is known as the Red Planet?", a: "Mars", exp: "Mars is called the Red Planet due to iron oxide." },
+            { id: 8, q: "In a certain code, 'CAT' is written as 'DBU'. How is 'DOG' written?", a: "EPH", exp: "Each letter is shifted by +1." },
+            { id: 9, q: "Find the HCF of 24 and 36.", a: "12", exp: "Factors of 24: 1,2,3,4,6,8,12,24. 36: 1,2,3,4,6,9,12... Highest common is 12." },
+            { id: 10, q: "Who is the current Prime Minister of India? (Surname only)", a: "Modi", exp: "Narendra Modi." },
+            { id: 11, q: "If 15% of A is equal to 20% of B, then A:B is? (Format x:y)", a: "4:3", exp: "15A = 20B => A/B = 20/15 = 4/3." },
+            { id: 12, q: "Pointing to a man, a woman said, 'His mother is the only daughter of my mother.' How is the woman related to the man?", a: "Mother", exp: "Only daughter of my mother is the woman herself." },
+            { id: 13, q: "Square root of 625 is:", a: "25", exp: "25 x 25 = 625." },
+            { id: 14, q: "Capital of Australia is?", a: "Canberra", exp: "It is Canberra, not Sydney or Melbourne." },
+            { id: 15, q: "If COST is coded as XLHG, how is MAN coded?", a: "NZM", exp: "Opposite letters: C(3)<->X(24), etc. M<->N, A<->Z, N<->M." },
+            { id: 16, q: "Value of sin(30) + cos(60)? (Decimal)", a: "1", exp: "0.5 + 0.5 = 1." },
+            { id: 17, q: "A does work in 10 days, B in 15 days. Together they finish in?", a: "6", exp: "1/10 + 1/15 = 5/30 = 1/6. So 6 days." },
+            { id: 18, q: "Look at this series: 7, 10, 8, 11, 9, 12, ... What number should come next?", a: "10", exp: "Alternating series: 7->8->9->10 and 10->11->12." },
+            { id: 19, q: "Which gas is most abundant in the Earth's atmosphere?", a: "Nitrogen", exp: "Nitrogen makes up about 78%." },
+            { id: 20, q: "Simple Interest on 1000 at 10% for 2 years is?", a: "200", exp: "SI = (1000*10*2)/100 = 200." },
+            { id: 21, q: "How many triangles are there in a square with both diagonals drawn?", a: "8", exp: "4 small, 4 large triangles." },
+            { id: 22, q: "Opposite of 'Expanded' is?", a: "Contracted", exp: "Or Condensed/Shrunk." },
+            { id: 23, q: "Average of first 5 natural numbers is?", a: "3", exp: "(1+2+3+4+5)/5 = 15/5 = 3." },
+            { id: 24, q: "Full form of CPU?", a: "Central Processing Unit", exp: "Central Processing Unit." },
+            { id: 25, q: "If 1st Jan 2004 was Thursday, what day was 1st Jan 2005?", a: "Saturday", exp: "2004 was leap year, so +2 odd days. Thursday + 2 = Saturday." },
+            { id: 26, q: "Find x if 2x + 5 = 15.", a: "5", exp: "2x = 10, x = 5." },
+            { id: 27, q: "Which article of Indian Constitution abolishes Untouchability?", a: "17", exp: "Article 17." },
+            { id: 28, q: "Convert 1010 (binary) to decimal.", a: "10", exp: "8+0+2+0 = 10." },
+            { id: 29, q: "Largest organ in human body?", a: "Skin", exp: "Skin is the largest organ." },
+            { id: 30, q: "Smallest prime number is?", a: "2", exp: "2 is the only even prime number." }
+        ];
+
+        let currentQuestions = [];
+
+        // --- INIT QUIZ ---
+        window.onload = function() {
+            loadRandomQuestions();
         };
+
+        function loadRandomQuestions() {
+            const container = document.getElementById('quiz-container');
+            container.innerHTML = ""; // Clear existing
+            
+            // Shuffle and pick 10
+            const shuffled = [...questionBank].sort(() => 0.5 - Math.random());
+            currentQuestions = shuffled.slice(0, 10);
+
+            // Render Questions
+            currentQuestions.forEach((item, index) => {
+                const card = document.createElement('div');
+                card.className = 'quiz-card';
+                card.innerHTML = `
+                    <div class="question-header">Question ${index + 1} of 10</div>
+                    <div class="question-text">${item.q}</div>
+                    <input type="text" id="ans-${index}" placeholder="Type your answer...">
+                    <div class="feedback" id="feed-${index}"></div>
+                    <div class="explanation" id="exp-${index}">Explanation: ${item.exp}</div>
+                `;
+                container.appendChild(card);
+            });
+        }
 
         function submitTest() {
             let score = 0;
-            let total = 3;
+            let total = currentQuestions.length;
+            let allFilled = true;
 
-            // Loop through each question
-            for (let id in answers) {
-                let userVal = document.getElementById(id).value.trim();
-                let feedDiv = document.getElementById("feed" + id.replace("ans", ""));
-                let inputField = document.getElementById(id);
-
-                feedDiv.style.display = "block";
-                inputField.disabled = true; // Disable editing
-
-                if (userVal === answers[id]) {
+            currentQuestions.forEach((item, index) => {
+                const input = document.getElementById(`ans-${index}`);
+                const feed = document.getElementById(`feed-${index}`);
+                const exp = document.getElementById(`exp-${index}`);
+                
+                let userVal = input.value.trim();
+                
+                // Flexible Checking (Case insensitive)
+                if (userVal.toLowerCase() === item.a.toLowerCase()) {
                     score++;
-                    feedDiv.className = "feedback correct-text";
-                    feedDiv.innerHTML = "✅ Correct Answer!";
-                    inputField.style.borderColor = "green";
+                    feed.className = "feedback correct-text";
+                    feed.innerHTML = "✅ Correct!";
+                    input.style.borderColor = "green";
                 } else {
-                    feedDiv.className = "feedback wrong-text";
-                    feedDiv.innerHTML = `❌ Incorrect. Correct answer: ${answers[id]}`;
-                    inputField.style.borderColor = "red";
+                    feed.className = "feedback wrong-text";
+                    feed.innerHTML = `❌ Incorrect. Correct answer: ${item.a}`;
+                    input.style.borderColor = "red";
                 }
-            }
+                
+                // Show visuals
+                feed.style.display = "block";
+                exp.style.display = "block";
+                input.disabled = true;
+            });
 
-            // Show Result Popup
+            // Show Result
             document.getElementById("final-score").innerText = score + "/" + total;
             document.getElementById("result-overlay").style.display = "flex";
             
-            // Hide Submit Button
+            // Toggle Buttons
             document.querySelector('.submit-all-btn').style.display = 'none';
+            document.getElementById('retry-btn').style.display = 'inline-block';
         }
 
         function closeResult() {

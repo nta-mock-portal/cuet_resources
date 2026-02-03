@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Live Mock Test - CUET (UG)</title>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;500;700&display=swap" rel="stylesheet">
+    <style>
+        /* --- THEME STYLES --- */
+        * { box-sizing: border-box; }
+        body { margin: 0; font-family: 'Roboto', sans-serif; background-color: #f0f2f5; color: #333; user-select: none; }
+        
+        header { 
+            background-color: #008080; color: white; padding: 20px 0; text-align: center; 
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1); position: sticky; top: 0; z-index: 1000; width: 100%;
+        }
+        header h1 { margin: 0; font-size: 22px; font-weight: 700; }
+
+        .container { max-width: 800px; margin: 30px auto; padding: 20px; padding-bottom: 80px; }
+        
+        /* --- QUIZ CARD STYLES --- */
+        .quiz-card {
+            background: white; padding: 25px; border-radius: 8px; 
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05); margin-bottom: 20px; border: 1px solid #ddd;
+        }
+        .question-text { font-size: 18px; font-weight: 500; color: #002147; margin-bottom: 15px; }
+        
+        input[type="text"] {
+            width: 100%; padding: 12px; font-size: 16px; border: 2px solid #eee; border-radius: 5px;
+            transition: border 0.3s;
+        }
+        input[type="text"]:focus { border-color: #008080; outline: none; }
+        
+        /* FEEDBACK TEXT (Hidden initially) */
+        .feedback { margin-top: 10px; font-weight: bold; display: none; }
+        .correct-text { color: green; }
+        .wrong-text { color: red; }
+
+        /* --- FINAL SUBMIT BUTTON --- */
+        .footer-bar {
+            position: fixed; bottom: 0; left: 0; width: 100%; background: white; 
+            padding: 15px; text-align: center; box-shadow: 0 -2px 10px rgba(0,0,0,0.1);
+            display: flex; justify-content: center; gap: 20px; align-items: center;
+        }
+
+        .submit-all-btn {
+            background-color: #d32f2f; color: white; border: none; padding: 12px 40px; 
+            border-radius: 5px; cursor: pointer; font-size: 18px; font-weight: bold;
+        }
+        .submit-all-btn:hover { background-color: #b71c1c; }
+
+        .back-link { text-decoration: none; color: #555; font-weight: 500; }
+
+        /* SCORE POPUP */
+        #result-overlay {
+            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.8); z-index: 2000; justify-content: center; align-items: center;
+        }
+        .result-box {
+            background: white; padding: 40px; border-radius: 10px; text-align: center; width: 90%; max-width: 400px;
+        }
+        .score-circle {
+            width: 100px; height: 100px; border-radius: 50%; background: #008080; color: white;
+            display: flex; justify-content: center; align-items: center; font-size: 32px; font-weight: bold;
+            margin: 0 auto 20px auto;
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>Section A: Numerical Ability</h1>
+    </header>
+
+    <div class="container">
+        <div class="quiz-card" id="card1">
+            <div class="question-text">Q1. If the mean of 5 observations x, x+2, x+4, x+6 and x+8 is 11, find the value of x.</div>
+            <input type="text" id="ans1" placeholder="Type answer...">
+            <div class="feedback" id="feed1"></div>
+        </div>
+
+        <div class="quiz-card" id="card2">
+            <div class="question-text">Q2. What is the probability of getting a sum of 9 when two dice are thrown simultaneously? (e.g., 1/9)</div>
+            <input type="text" id="ans2" placeholder="Type answer...">
+            <div class="feedback" id="feed2"></div>
+        </div>
+
+        <div class="quiz-card" id="card3">
+            <div class="question-text">Q3. The mode of the data: 4, 6, 7, 4, 8, 4, 9 is:</div>
+            <input type="text" id="ans3" placeholder="Type answer...">
+            <div class="feedback" id="feed3"></div>
+        </div>
+    </div>
+
+    <div class="footer-bar">
+        <a href="index.html" class="back-link">Exit Test</a>
+        <button class="submit-all-btn" onclick="submitTest()">Submit Test</button>
+    </div>
+
+    <div id="result-overlay">
+        <div class="result-box">
+            <h2>Test Completed!</h2>
+            <div class="score-circle" id="final-score">0/3</div>
+            <p id="result-text">Review your answers below.</p>
+            <button class="submit-all-btn" style="background:#333;" onclick="closeResult()">Check Answers</button>
+        </div>
+    </div>
+
+    <script>
+        // Correct Answers Config
+        const answers = {
+            ans1: "7",
+            ans2: "1/9",
+            ans3: "4"
+        };
+
+        function submitTest() {
+            let score = 0;
+            let total = 3;
+
+            // Loop through each question
+            for (let id in answers) {
+                let userVal = document.getElementById(id).value.trim();
+                let feedDiv = document.getElementById("feed" + id.replace("ans", ""));
+                let inputField = document.getElementById(id);
+
+                feedDiv.style.display = "block";
+                inputField.disabled = true; // Disable editing
+
+                if (userVal === answers[id]) {
+                    score++;
+                    feedDiv.className = "feedback correct-text";
+                    feedDiv.innerHTML = "✅ Correct Answer!";
+                    inputField.style.borderColor = "green";
+                } else {
+                    feedDiv.className = "feedback wrong-text";
+                    feedDiv.innerHTML = `❌ Incorrect. Correct answer: ${answers[id]}`;
+                    inputField.style.borderColor = "red";
+                }
+            }
+
+            // Show Result Popup
+            document.getElementById("final-score").innerText = score + "/" + total;
+            document.getElementById("result-overlay").style.display = "flex";
+            
+            // Hide Submit Button
+            document.querySelector('.submit-all-btn').style.display = 'none';
+        }
+
+        function closeResult() {
+            document.getElementById("result-overlay").style.display = "none";
+        }
+    </script>
+</body>
+</html>

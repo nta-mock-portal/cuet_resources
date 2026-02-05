@@ -185,14 +185,18 @@
                 </form>
                 <p style="color:red; font-size: 12px;" id="login-error"></p>
             </div>
+            
             <div id="app-section" style="display:none;">
                 <h3>💬 Secure Chat</h3>
                 <input type="text" id="data-input" placeholder="Type encrypted message...">
                 <button class="action-btn" onclick="saveData()">Send</button>
+                
+                <button class="action-btn" onclick="window.location.href='quiz.html'" style="background-color: #008080;">📝 Open Mock Test</button>
+                
                 <button class="action-btn" onclick="logout()" style="background:#555;">End Session</button>
                 <div class="data-list" id="data-list"></div>
             </div>
-        </div>
+            </div>
     </div>
 
     <script type="module">
